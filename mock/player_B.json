@@ -1,0 +1,16 @@
+{
+  "resultCode": "00",
+  "resultMessage": "SUCCESS",
+  "param": {
+    "player": {
+      "name": "julie",
+      "age": "49",
+      "addr": "seoul",
+      "gender": "girl",
+      "openInfo": ["name"],
+      "grade": "gold"
+    },
+    "chatList": ["hello", "sorry", "bye"]
+  }
+  
+}

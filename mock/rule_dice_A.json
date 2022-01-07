@@ -1,0 +1,16 @@
+{
+  "resultCode": "00",
+  "resultMessage": "SUCCESS",
+  "param": {
+    "gameRule": {
+      "type": "dice",
+      "round": "5",
+      "teams": "2",
+      "playersIn1Team": "2",
+      "roundAction": [
+        { "how": "roll|1", "what": "dice|1"}
+      ],
+      "afterRoundAction": []
+    }
+  }
+}

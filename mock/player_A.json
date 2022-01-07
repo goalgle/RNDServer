@@ -1,0 +1,16 @@
+{
+  "resultCode": "00",
+  "resultMessage": "SUCCESS",
+  "param": {
+    "player": {
+      "name": "robert",
+      "age": "36",
+      "addr": "seoul",
+      "gender": "boy",
+      "openInfo": ["age", "gender"],
+      "grade": "silver"
+    },
+    "chatList": ["hello", "fighting", "bye"]
+  }
+  
+}

@@ -1,0 +1,15 @@
+{
+  "resultCode": "00",
+  "resultMessage": "SUCCESS",
+  "param": {
+    "player": {
+      "name": "sara",
+      "age": "26",
+      "addr": "busan",
+      "gender": "girl",
+      "openInfo": ["gender"],
+      "grade": "bronze"
+    },
+    "chatList": ["fighting", "oops", "sorry"]
+  }
+}
