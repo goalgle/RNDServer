@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 const app = require("express")();
 const server = require("http").createServer(app);
 // const cors = require("cors")
@@ -10,12 +11,25 @@ const io = require("socket.io")(server, {
 });
 const port = 3001;
 
+const ioAction = {
+  connectNotice: 'connectNotice',
+  enteranceNotice: 'enteranceNotice',
+
+  // API 대체 예정
+  joinRoom: 'joinRoom',
+  leaveRoom: 'leaveRoom',
+
+}
+
 // socket
 io.on("connection", socket => {
   console.log("a user connected ::: ", socket.id);
-  
-  socket.broadcast.emit('notice', socket.id + ' entered. say HI')
 
+  // socket id 회신
+  socket.emit(ioAction.connectNotice, socket.id)
+  
+  io.emit(enteranceNotice, socket.id + ' entered. say HI')
+  
   socket.on('disconnect', () => {
     console.log('user disconnected ::: ', socket.id);
     socket.broadcast.emit('notice', socket.id + ' left. say BYE')
@@ -35,3 +49,5 @@ io.on("connection", socket => {
 app.use('/', routes)
 
 server.listen(port, () => console.log("server running on port:" + port));
+
+module.exports = server

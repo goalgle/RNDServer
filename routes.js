@@ -1,5 +1,8 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-undef */
 var express = require('express');
 var router = express.Router();
+const fs = require("fs");
 
 // var faunadb = require('faunadb'),
 //   q = faunadb.query
@@ -15,7 +18,7 @@ var router = express.Router();
 
 const pathResolve = (path) => {
   // /Users/naxing/Documents/development/socketServer/mock/player_A.json
-  return '/Users/naxing/Documents/development/socketServer' + path
+  return '/Users/kangseoknam/RNDServer' + path
 }
 
 // middleware that is specific to this router
@@ -38,21 +41,19 @@ router.get('/api/myInfo/:name', (req, res) => {
   res.sendFile(pathResolve('/mock/player_' + req?.params?.name + '.json'));
 })
 
+// get my info
+router.get('/api/gameStatus', (req, res) => {
+  // const buffer = fs.readFileSync(pathResolve('/mock/gameStatus_1.json'));
+  // res.send(buffer);
+  res.header("Content-Type",'application/json');
+  res.sendFile(pathResolve('/mock/gameStatus_1.json'));
+})
+
 // define the POST
-// router.post('/customer', (res, req) => {
-//   try {
-//     client.query(
-//       q.Create(
-//         q.Collection('test'),
-//         { data: { testField: 'testValue' } }
-//       )
-//     ).then(function(response) {
-//       console.log(response.ref); // Logs the ref to the console.
-//     })
-//   } catch (e) {
-//     console.log(e)
-//   }
-// })
+router.post('/player', (req, res) => {
+  
+  console.log('server routes', req.body)
+})
 
 // define GET customers
 // router.get('/customer', (res, req) => {
