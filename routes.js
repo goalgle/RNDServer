@@ -36,9 +36,9 @@ router.get('/about', function(req, res) {
 });
 
 // get my info
-router.get('/api/myInfo/:name', (req, res) => {
+router.get('/api/myInfo/:playerId', (req, res) => {
   res.header("Content-Type",'application/json');
-  res.sendFile(pathResolve('/mock/player_' + req?.params?.name + '.json'));
+  res.sendFile(pathResolve('/mock/player_' + req?.params?.playerId + '.json'));
 })
 
 // get my info
