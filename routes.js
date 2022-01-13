@@ -49,6 +49,18 @@ router.get('/api/gameStatus', (req, res) => {
   res.sendFile(pathResolve('/mock/gameStatus_1.json'));
 })
 
+// get roomList
+router.get('/api/roomList', (req, res) => {
+  res.header("Content-Type",'application/json');
+  res.send(db.get('roomList'));
+})
+
+// post login
+router.post('login', (req, res) => {
+  debugger
+
+})
+
 // define the POST
 router.post('/player', (req, res) => {
   

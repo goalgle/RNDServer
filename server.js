@@ -1,7 +1,6 @@
 /* eslint-disable no-undef */
 const app = require("express")();
 const server = require("http").createServer(app);
-// const cors = require("cors")
 const routes = require("./routes")
 const io = require("socket.io")(server, {
   cors : {
@@ -10,6 +9,9 @@ const io = require("socket.io")(server, {
   }
 });
 const JSONdb = require('simple-json-db');
+
+const {getPlayerList, getRoomList, addRoomList, addPlayerList, deletePlayer, addPlayerToRoom} = require('./dataAccess')
+
 const port = 3000;
 
 const ioAction = {
@@ -24,7 +26,7 @@ const ioAction = {
 
 // DB
 // /Users/naxing/Documents/development/RNDServer/database.json
-const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database.json');
+const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database_local.json');
 
 // socket
 io.on("connection", socket => {
@@ -41,10 +43,10 @@ io.on("connection", socket => {
   // 4. 요청한 roomId 에 플레이어가 없고 정원이 찼으면 - 실패
   socket.on(ioAction.requestJoinGame, (data) => {
 
-    db.sync();
+// const {getPlayerList, getRoomList, addRoomList, addPlayerList, deletePlayer, addPlayerToRoom} = require('./dataAccess')
 
-    const playerList = db.get('playerList') || []
-    const roomList = db.get('roomList') || []
+    const playerList = getPlayerList()
+    const roomList = getRoomList()
 
     let returnInfo = null;
 
@@ -54,15 +56,13 @@ io.on("connection", socket => {
       
       // 게임이 없으면 신규 게임 + 신규 플레이어 - 신규게임 roomId 를 생성합니다.
       if (!roomInfo) {
-        // 게임정보 저장
-        roomList.push({'roomId': data.roomId, 'playerList': [{playerId: data.playerId}]})
-        db.set('roomList', roomList)
-
         // 유저정보 저장 - 소켓포함
-        playerList.push({'playerId': data.playerId, 'roomId': data.roomId, 'socketId': socket.id})
-        db.set('playerList', playerList)
-        
-        returnInfo = {'roomId': data.roomId, 'playerList': [{playerId: data.playerId}]}
+        const newPlayer = {'playerId': data.playerId, 'socketId': socket.id}
+        addPlayerList(newPlayer)
+
+        // 게임정보 저장
+        const updateRoomList = addPlayerToRoom(roomInfo.roomId, newPlayer)
+        returnInfo = updateRoomList.filter(item.roomId = roomInfo.roomId)
       }
 
       // 게임이 있고 진행중이며 플레이어가 목록에 있으면 개입 시킨다. - 현재 게임 상태 전송
@@ -79,18 +79,13 @@ io.on("connection", socket => {
           }
           // 아직 정원이 차 있지 않으면 게임인원 추가 - 갱신
           else {
-            // 게임방 정보 갱신
-            roomInfo.playerList.push({playerId: data.playerId})
-            const roomIdx = roomList.findIndex(item => item.roomId === roomInfo.roomId)
-            roomList.splice(roomIdx, 1)
-            roomList.push({'roomId': data.roomId, 'playerList': roomInfo.playerList})
-            db.set('roomList', roomList)
+            // 유저정보 저장 - 소켓포함
+            const newPlayer = {'playerId': data.playerId, 'socketId': socket.id}
+            addPlayerList(newPlayer)
 
-            // 플레이어 정보 추가
-            playerList.push({'playerId': data.playerId, 'roomId': data.roomId, 'socketId': socket.id})
-
-            // 정보 리턴
-            returnInfo = {'roomId': data.roomId, 'playerList': roomInfo.playerList}
+            // 게임정보 저장
+            const updateRoomList = addPlayerToRoom(roomInfo.roomId, newPlayer)
+            returnInfo = updateRoomList.filter(item.roomId = roomInfo.roomId)
           }
         }
       }
@@ -106,17 +101,10 @@ io.on("connection", socket => {
   
   socket.on('disconnect', () => {
     console.log('user disconnected ::: ', socket.id);
-    // 유저정보를 통해 게임 정보 획득
-    const playerList = db.get('playerList') || []
-    const playerInfo = playerList.filter(item => item.socketId === socket.id)?.[0]
-
-    const playerIdx = playerList.findIndex(item => item.socketId === socket.id)
-
-    // 유저정보 삭제
-    if (playerIdx !== -1) playerList.slice(playerIdx, 1)
+    const player = deletePlayer(socket.id)
 
     // 공지 - 유저 삭제
-    socket.broadcast.emit(ioAction.notice, playerInfo?.playerId + ' 유저님이 나갔어요.')
+    if (player) socket.broadcast.emit(ioAction.notice, player?.playerId + ' 유저님이 나갔어요.')
   });
 
   // 주사위
@@ -126,8 +114,8 @@ io.on("connection", socket => {
 
   // 채팅
   socket.on("chat", msg => {
-    console.log(msg);
-    socket.emit("chat", 'someone said ::' + msg);
+    const player = getPlayerList()?.filter(item => item.socketId === socket.id)?.[0]
+    socket.emit("chat", player?.playerId + ' ::' + msg);
   });
 
   socket.on("action", (action, id) => {
