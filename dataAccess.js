@@ -5,8 +5,25 @@
 const JSONdb = require('simple-json-db');
 const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database.json');
 
+
+// when server restart :: online player and room init
 db.set("playerList", [])
+// db.set("roomList", []) // 개발중일때 수시로 서버가 리스타트된다.
 db.sync();
+
+// 하는 thread worker를 생성한다.
+
+// 10분단위로 roomList 를 검사하고 삭제
+module.exports.detectOldRoom = () => {
+  const availInterval = 10 // 10min
+  const roomList = db.get("roomList") || []
+  const availTimestamp = new Date().getTime() + availInterval * 1000 * 60
+  
+  const availRoomList = roomList.filter(item => (availTimestamp - item.availTimestamp) > 0)
+
+  db.set("roomList", availRoomList)
+  db.sync()
+}
 
 
 // dao.getPlayerList()
@@ -78,8 +95,10 @@ module.exports.makeNewRoom = (roomId, player) => {
   const roomList = db.get("roomList") || []
   const existRoom = roomList?.filter(item => item.roomId === roomId)?.[0]
 
+  const timeStamp = new Date().getTime() // number : msec (1/1000 sec) ==> 10min : 1*1000*60*10
+
   if (!existRoom) {
-    const newRoom = {roomId: roomId, playerList: [player]}
+    const newRoom = {roomId, playerList: [player], timeStamp}
     roomList.push(newRoom)
     db.set("roomList", roomList)
     db.sync()

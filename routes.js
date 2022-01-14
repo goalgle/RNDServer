@@ -52,7 +52,7 @@ router.get('/api/gameStatus', (req, res) => {
 // get roomList
 router.get('/api/roomList', (req, res) => {
   res.header("Content-Type",'application/json');
-  res.send(db.get('roomList'));
+  res.send(db.get('roomList') || []);
 })
 
 // post login
