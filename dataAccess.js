@@ -5,16 +5,18 @@
 const JSONdb = require('simple-json-db');
 const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database.json');
 
+db.set("playerList", [])
 db.sync();
 
 
 // dao.getPlayerList()
 module.exports.getPlayerList = () => db.get("playerList") || []
-module.exports.getPlayerList = (playerId) => db.get("playerList").filter(item => item.playerId === playerId)[0]
+module.exports.getPlayerInfo = (playerId) => db.get("playerList").filter(item => item.playerId === playerId)?.[0]
+module.exports.getPlayerInfoBySocket = (socketId) => db.get("playerList").filter(item => item.socketId === socketId)?.[0]
 
 // dao.getRoomList()
 module.exports.getRoomList = () => db.get("roomList") || []
-module.exports.getRoomList = (roomId) => db.get("roomList")?.filter(item => item.roomId === roomId)[0]
+module.exports.getRoomInfo = (roomId) => db.get("roomList")?.filter(item => item.roomId === roomId)?.[0]
 
 // dao.addRoomList(roomObject)
 // module.exports.addRoomList = (room) => {
@@ -56,7 +58,7 @@ module.exports.addPlayerList = (player) => {
   return playerList
 } 
 
-// dao.deletePlayer(socketId)
+// dao.deletePlayer(socketId) // deleteOnlinePlayer
 module.exports.deletePlayer = (socketId) => {
   const playerList = db.get("playerList") || []
   const existPlayer = playerList?.filter(item => item.socketId === socketId)?.[0]

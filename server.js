@@ -39,7 +39,7 @@ io.on("connection", socket => {
 
     if (data && data.playerId && data.roomId) {
       // 게임을 찾는다. 
-      const roomInfo = dao.getRoomList(data.roomId)
+      const roomInfo = dao.getRoomInfo(data.roomId)
       
       // 게임이 없으면 신규 게임 + 신규 플레이어 - 신규게임 roomId 를 생성합니다.
       if (!roomInfo) {
@@ -104,7 +104,7 @@ io.on("connection", socket => {
 
   // 채팅
   socket.on("chat", msg => {
-    const player = dao.getPlayerList()?.filter(item => item.socketId === socket.id)?.[0]
+    const player = dao.getPlayerInfoBySocket(socket.id)
     socket.emit("chat", player?.playerId + ' ::' + msg);
   });
 
