@@ -8,11 +8,10 @@ const io = require("socket.io")(server, {
     credentials :true
   }
 });
-const JSONdb = require('simple-json-db');
 
-const {getPlayerList, getRoomList, addRoomList, addPlayerList, deletePlayer, addPlayerToRoom} = require('./dataAccess')
+const dao = require('./dataAccess')
 
-const port = 3000;
+const port = 3001;
 
 const ioAction = {
   requestJoinGame: 'requestJoinGame', // 게임 참가 요청 - emit / on
@@ -23,18 +22,9 @@ const ioAction = {
   leaveRoom: 'leaveRoom',
 }
 
-
-// DB
-// /Users/naxing/Documents/development/RNDServer/database.json
-const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database_local.json');
-
 // socket
 io.on("connection", socket => {
   console.log("a user connected ::: ", socket.id);
-
-  // 접속 정보 갱신 - playerList
-  // const playerList = db.get('playerList') || []
-  // const playerInfo = playerList.filter(item => item.socketId === socket.id)?.[0]
 
   // 게임 요청 확인 및 수락
   // 1. 요청한 roomId 존재여부 확인 - 없으면 생성하고 성공 리턴
@@ -45,47 +35,48 @@ io.on("connection", socket => {
 
 // const {getPlayerList, getRoomList, addRoomList, addPlayerList, deletePlayer, addPlayerToRoom} = require('./dataAccess')
 
-    const playerList = getPlayerList()
-    const roomList = getRoomList()
-
     let returnInfo = null;
 
     if (data && data.playerId && data.roomId) {
       // 게임을 찾는다. 
-      const roomInfo = roomList.filter(item => item.roomId === data.roomId)?.[0]
+      const roomInfo = dao.getRoomList(data.roomId)
       
       // 게임이 없으면 신규 게임 + 신규 플레이어 - 신규게임 roomId 를 생성합니다.
       if (!roomInfo) {
         // 유저정보 저장 - 소켓포함
-        const newPlayer = {'playerId': data.playerId, 'socketId': socket.id}
-        addPlayerList(newPlayer)
+        const newPlayer = {'playerId': data.playerId, 'socketId': socket.id, 'roomId': data.roomId}
+        dao.addPlayerList(newPlayer)
 
         // 게임정보 저장
-        const updateRoomList = addPlayerToRoom(roomInfo.roomId, newPlayer)
-        returnInfo = updateRoomList.filter(item.roomId = roomInfo.roomId)
+        const newRoomInfo = dao.makeNewRoom(data.roomId, newPlayer)
+        returnInfo = newRoomInfo
       }
 
       // 게임이 있고 진행중이며 플레이어가 목록에 있으면 개입 시킨다. - 현재 게임 상태 전송
       else {
-        const alreadyExistInThisRoom = roomInfo.playerList.filter(item => item.playerId === data.playerId)?.[0]
+        // regist current online player status
+        const requestPlayer = {'playerId': data.playerId, 'socketId': socket.id, 'roomId': data.roomId}
+        dao.addPlayerList(requestPlayer)
+
+        const alreadyExistInThisRoom = roomInfo?.playerList?.filter(item => item.playerId === data.playerId)?.[0]
         if (alreadyExistInThisRoom) {
           returnInfo = {'roomId': data.roomId, 'playerList': roomInfo.playerList}
         }
         // 게임이 있지만 플레이어 목록에 없으면
         else {
           // 플레이어 정원 4명이 다 차있으면
-          if (roomInfo.playerList.length > 3) {
+          if (roomInfo?.playerList?.length > 3) {
             returnInfo = {'roomId': '', 'playerList': []}
           }
           // 아직 정원이 차 있지 않으면 게임인원 추가 - 갱신
           else {
             // 유저정보 저장 - 소켓포함
-            const newPlayer = {'playerId': data.playerId, 'socketId': socket.id}
-            addPlayerList(newPlayer)
+            const newPlayer = {'playerId': data.playerId, 'socketId': socket.id, 'roomId': data.roomId}
+            dao.addPlayerList(newPlayer)
 
             // 게임정보 저장
-            const updateRoomList = addPlayerToRoom(roomInfo.roomId, newPlayer)
-            returnInfo = updateRoomList.filter(item.roomId = roomInfo.roomId)
+            const updatedRoom = dao.addPlayerToRoom(roomInfo.roomId, newPlayer)
+            returnInfo = updatedRoom
           }
         }
       }
@@ -96,12 +87,11 @@ io.on("connection", socket => {
       console.error('incompleted data ::: ', data)
       socket.emit('incompleted data ::: ', data)
     }
-    console.log('DB ::: ', db.JSON())
   })
   
   socket.on('disconnect', () => {
     console.log('user disconnected ::: ', socket.id);
-    const player = deletePlayer(socket.id)
+    const player = dao.deletePlayer(socket.id)
 
     // 공지 - 유저 삭제
     if (player) socket.broadcast.emit(ioAction.notice, player?.playerId + ' 유저님이 나갔어요.')
@@ -114,7 +104,7 @@ io.on("connection", socket => {
 
   // 채팅
   socket.on("chat", msg => {
-    const player = getPlayerList()?.filter(item => item.socketId === socket.id)?.[0]
+    const player = dao.getPlayerList()?.filter(item => item.socketId === socket.id)?.[0]
     socket.emit("chat", player?.playerId + ' ::' + msg);
   });
 
@@ -127,5 +117,7 @@ io.on("connection", socket => {
 app.use('/', routes)
 
 server.listen(port, () => console.log("server running on port:" + port));
+
+// 서버 종료시 db 초기화
 
 module.exports = server
