@@ -4,6 +4,8 @@ var express = require('express');
 var router = express.Router();
 const fs = require("fs");
 
+const gameServices = require('./services/game')
+
 // var faunadb = require('faunadb'),
 //   q = faunadb.query
 
@@ -18,7 +20,7 @@ const fs = require("fs");
 
 const pathResolve = (path) => {
   // /Users/naxing/Documents/development/socketServer/mock/player_A.json
-  return '/Users/kangseoknam/RNDServer' + path
+  return '/Users/naxing/Documents/development/RNDServer' + path
 }
 
 // middleware that is specific to this router
@@ -38,6 +40,7 @@ router.get('/about', function(req, res) {
 // get my info
 router.get('/api/myInfo/:playerId', (req, res) => {
   res.header("Content-Type",'application/json');
+  //  /Users/naxing/Documents/development/RNDServer/mock/player_A.json
   res.sendFile(pathResolve('/mock/player_' + req?.params?.playerId + '.json'));
 })
 
@@ -56,9 +59,19 @@ router.get('/api/roomList', (req, res) => {
 })
 
 // post login
-router.post('login', (req, res) => {
-  debugger
+router.post('/api/requestJoinGame/:roomId/:playerId', (reqData, res) => {
+  const roomId = reqData?.params?.roomId
+  const playerId = reqData?.params?.playerId
 
+  if (reqData && roomId && playerId) {
+    const result = gameServices.requestJoinGame({roomId, playerId, socketId: reqData?.ip})
+    res.header("Content-Type",'application/json');
+    res.send(result)
+  } else {
+    console.error('incompleted data ::: ', reqData)
+    res.header("Content-Type",'application/json');
+    res.send({resultCode: '777', resultMessage: 'require parameter missing' })
+  }
 })
 
 // define the POST

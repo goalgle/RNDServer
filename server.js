@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 const app = require("express")();
+const cors = require("cors");
 const server = require("http").createServer(app);
 const routes = require("./routes")
 const io = require("socket.io")(server, {
@@ -72,7 +73,15 @@ io.on("connection", socket => {
 });
 
 // http
-app.use('/', routes)
+// app.use('/', routes)
+app.use(cors())
+app.use(
+  '/',
+  routes,
+  // createProxyMiddleware(
+  //   {target: 'http://localhost:3000', changeOrigin: true}
+  // )
+)
 
 server.listen(port, () => {
   // after server start
