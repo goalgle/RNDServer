@@ -1,4 +1,5 @@
 // API SET for GAME
+const produce = require('immer')
 const dao = require('../dataAccess')
 const ioAction = {
   requestJoinGame: 'requestJoinGame', // 게임 참가 요청 - emit / on
@@ -8,6 +9,15 @@ const ioAction = {
   
   leaveRoom: 'leaveRoom',
 }
+
+// sample game rule
+const gameRule = {
+  type: 'dice',
+  round: 20,
+  teams: 2,
+  players: 4,
+}
+
 /**
  * USAGE - DSL 적용
  * const gameService = require('./services/game')
@@ -71,6 +81,45 @@ module.exports.requestJoinGame = (data) => {
   return returnInfo
 }
 
+module.exports.getRoomList = () => {
+  return dao.getRoomList()
+}
 
+module.exports.getRoomInfo = (roomId) => {
+  return dao.getRoomInfo(roomId)
+}
 
+module.exports.getPlayerList = () => {
+  return dao.getPlayerList()
+}
 
+module.exports.deleteOldRoom = () => {
+  return dao.deleteOldRoom()
+}
+
+module.exports.setGamePlayers = (roomId) => {
+  // rule 에 따라 플레이어 맞춤 및 turn 결젱
+  const roomInfo = dao.getRoomInfo(roomId)
+  const roomPlayerList = roomInfo?.playerList || []
+
+  if ((gameRule.players - roomPlayerList.length) > 1) { // roomPlayerList 는 적어도 한명 존재(자신)
+    // 인원수 확장
+    const dummyPlayerId = ['A', 'B', 'C', 'D']
+    for(i = roomPlayerList.length; i < gameRule.players; i++) { // 1, 2, 3
+      dao.addPlayerToRoom(roomId, { playerId: dummyPlayerId[i], socketId: 'AUTO', roomId: roomId})
+    }
+  }
+  // 온라인 체크
+  const expandedPlayerList = dao.getRoomInfo(roomId).playerList || [] // expaneded to 4
+  const onlinePlayerInRoom = dao.getPlayerList()?.filter(item => item.roomId === roomId)
+
+  expandedPlayerList.forEach((item, idx) => {
+    const bOnline = onlinePlayerInRoom.some((v, i) => {v.playerId === item.playerId})
+    if (!bOnline) dao.updatePlayerInfoInRoom(roomId, item.playerId, {socketId: 'AUTO'})
+  })
+}
+
+// TEST
+module.exports.deleteRoomList = () => {
+  dao.deleteRoomList()
+}

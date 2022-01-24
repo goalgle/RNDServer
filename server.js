@@ -14,14 +14,24 @@ const gameServices = require('./services/game')
 
 const dao = require('./dataAccess')
 
-const port = 3001;
+const port = 3000;
 
 const ioAction = {
   requestJoinGame: 'requestJoinGame', // 게임 참가 요청 - emit / on
   notice: 'notice', // 서버 알림 공지
   disconnect: 'disconnect', // 접속 해제
-  chat: 'chat',
+  chat: 'chat', // 채팅
 }
+
+// sample game rule
+const gameRule = {
+  type: 'dice',
+  round: 20,
+  teams: 2,
+  players: 4,
+}
+
+
 
 // socket
 io.on("connection", socket => {
@@ -33,6 +43,9 @@ io.on("connection", socket => {
   // 3. 요청한 roomId 에 플레이어가 없고 아직 정원이 아닌 경우 - 게임방에 넣고 성공 리턴
   // 4. 요청한 roomId 에 플레이어가 없고 정원이 찼으면 - 실패
   socket.on(ioAction.requestJoinGame, (reqData) => {
+
+    gameServices.deleteOldRoom() // deleting rooms of 30min over
+
     if (reqData && reqData.playerId && reqData.roomId) {
       const result = gameServices.requestJoinGame({...reqData, socketId: socket.id})
       io.emit(ioAction.requestJoinGame, result)
@@ -50,21 +63,51 @@ io.on("connection", socket => {
     if (player) socket.broadcast.emit(ioAction.notice, player?.playerId + ' 유저님이 나갔어요.')
   });
 
-  // 주사위
-  socket.on('dice', () => {
-    const min = Math.ceil(1)
-    const max = Math.floor(6)
-    const result = Math.floor(Math.random() * (max - min + 1)) + min
+  const nextTurn = (roomInfo) => {
+    const round = roomInfo?.round
+    const playerList = roomInfo?.playerList
+    const whosTurnIdx = round % gameRule.player
+    return { turn: playerList?.[whosTurnIdx] }
+  }
 
-    console.log('dice ::: ', result)
-    io.emit('dice', {diceResult: result})
+  // 인원수 없는 경우 플레이어 늘리고 강제 시작
+  socket.on('start', (reqData) => {
+    if (reqData && reqData?.roomId && reqData?.playerId) {
+
+      gameServices.setGamePlayers(reqData.roomId)
+      
+      const updatedRoom = gameServices.getRoomInfo(reqData.roomId)
+
+      io.emit('notice', 'new game started!')
+      io.emit('gameUpdate', { ...updatedRoom, turn: nextTurn(updatedRoom)})
+    }
   })
+
+  // 주사위
+  socket.on('dice', (reqData) => {
+
+    // 순서 체크 : 방정보 획득, 유저정보 확인
+    if (reqData && reqData?.roomId && reqData?.playerId) {
+      const roomInfo = gameServices.getRoomInfo(reqData?.roomId)
+      
+      if (roomInfo.turn === reqData.playerId) {
+        const min = Math.ceil(1)
+        const max = Math.floor(6)
+        const diceResult = Math.floor(Math.random() * (max - min + 1)) + min
+
+        const updatedRoomInfo = gameServices.rollDice(reqData?.roomId, reqData?.playerId, diceResult)
+        io.emit("update", updatedRoomInfo)
+      } else {
+        io.emit('chat', reqData.playerId + '님 차례가 아니에요.')
+      }
+    }
+  });
 
   // 채팅
   socket.on("chat", msg => {
     const player = dao.getPlayerInfoBySocket(socket.id)
     if(player) io.emit("chat", player?.playerId + ' ::' + msg);
-    else socket.emit("chat", '당신은 누구십니까?')    
+    else socket.emit("chat", '당신은 누구십니까?')
   });
 
   socket.on("action", (action, id) => {
@@ -72,25 +115,16 @@ io.on("connection", socket => {
   })
 });
 
+
 // http
 // app.use('/', routes)
 app.use(cors())
-app.use(
-  '/',
-  routes,
-  // createProxyMiddleware(
-  //   {target: 'http://localhost:3000', changeOrigin: true}
-  // )
-)
+app.use('/',routes,)
 
 server.listen(port, () => {
-  // after server start
-
-  // make new Thread
-
   console.log("server running on port:" + port)
 });
 
-// 서버 종료시 db 초기화
+// 서버 종료시 db 초기화 ??
 
 module.exports = server

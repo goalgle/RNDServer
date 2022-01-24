@@ -1,9 +1,9 @@
 /**
  * db access action layer
  */
-
+const { produce } = require('immer')
 const JSONdb = require('simple-json-db');
-const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database.json');
+const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database_local.json');
 
 
 // when server restart :: online player and room init
@@ -14,12 +14,12 @@ db.sync();
 // 하는 thread worker를 생성한다.
 
 // 10분단위로 roomList 를 검사하고 삭제
-module.exports.detectOldRoom = () => {
-  const availInterval = 10 // 10min
+module.exports.deleteOldRoom = () => {
+  const availInterval = 30 // 10min
   const roomList = db.get("roomList") || []
   const availTimestamp = new Date().getTime() + availInterval * 1000 * 60
   
-  const availRoomList = roomList.filter(item => (availTimestamp - item.availTimestamp) > 0)
+  const availRoomList = roomList.filter(item => (availTimestamp - item.timeStamp) > 0)
 
   db.set("roomList", availRoomList)
   db.sync()
@@ -98,7 +98,15 @@ module.exports.makeNewRoom = (roomId, player) => {
   const timeStamp = new Date().getTime() // number : msec (1/1000 sec) ==> 10min : 1*1000*60*10
 
   if (!existRoom) {
-    const newRoom = {roomId, playerList: [player], timeStamp}
+    const newRoom = {
+      roomId, 
+      playerList: [player], 
+      timeStamp, 
+      turn: '', 
+      score: {"I": [], "II": []},
+      host: player.playerId,
+      round: 0,
+    }
     roomList.push(newRoom)
     db.set("roomList", roomList)
     db.sync()
@@ -108,10 +116,34 @@ module.exports.makeNewRoom = (roomId, player) => {
   }
 }
 
+Array.prototype.keyCheckPush = (keyName, mode = 'UPDATE') => {
+  console.log(this)
+  // mode : "ERROR" ==> insert or error
+  // mode : "UPDATE" ==> insert or update
+}
+
+const findOne = (array, keyName, keyValue) => {
+  if(array instanceof Array) {
+    const findItem = array?.filter(item => item[keyName] === keyValue)?.[0]
+    return findItem
+  } else return {}
+}
+
 // dao.addPlayerListInRoom(roomId, playerObject)
 module.exports.addPlayerToRoom = (roomId, player) => {
-  console.log('DAO ::: addPlayerToRoom')
+  
+  console.log(`DAO ::: addPlayerToRoom >> ROOM_ID : ${roomId} / PLAYER_ID : ${player?.playerId}`)
   const roomList = db.get("roomList") || []
+  
+  // const roomInfo = findOne(roomList, 'roomId', roomId)
+  // const newRoomInfo = produce(roomInfo, draft => {
+  //   draft?.playerList?.push(player)
+  // })
+  // roomList.push(newRoomInfo)
+
+  // db.set("roomList", newRoomInfo)
+  // db.sync()
+
   const existRoom = roomList?.filter(item => item.roomId === roomId)?.[0]
   const existRoomIdx = roomList?.findIndex(item => item.roomId === roomId)
 
@@ -136,5 +168,46 @@ module.exports.addPlayerToRoom = (roomId, player) => {
   }
 }
 
+module.exports.deletePlayerInRoom = (roomId, playerId) => {
+  const roomInfo = this.getRoomInfo(roomId)
+  const playerList = roomInfo.playerList
+  // const playerInfo = playerList.filter(item => item.playerId === playerId)
+  const playerIdx = playerList.findIndex(item => item.playerId === playerId)
+  playerList.splice(playerIdx, 1)
+
+  const roomList = this.getRoomList()
+  const roomIdx = roomList.findIndex(item => item.roomId === roomId)
+  roomList.splice(roomIdx, 1)
+
+  const newRoomInfo = {...roomInfo, playerList}
+  roomList.push(newRoomInfo)
+
+  db.set("roomList", roomList)
+  db.sync()
+}
+
+module.exports.updatePlayerInfoInRoom = (roomId, playerId, playerOptionInfo) => {
+  console.log('DAO ::: updatePlayerInfoInRoom')
+
+  const roomInfo = this.getRoomInfo(roomId)
+  const playerListInRoom = roomInfo?.playerList || []
+
+  const playerInfo = playerListInRoom.filter(item => item.playerId === playerId)?.[0]
+
+  const newPlayerInfo = {...playerInfo, ...playerOptionInfo}
+
+  console.log('updatePlayerInfoInRoom ::: new ==> ', JSON.stringify(newPlayerInfo))
+
+  this.deletePlayerInRoom(roomId, playerId)
+  this.addPlayerToRoom(roomId, newPlayerInfo)
+  
+  db.sync()
+}
+
+// TEST
+module.exports.deleteRoomList = () => {
+  db.set("roomList", [])
+  db.sync()
+}
 
     

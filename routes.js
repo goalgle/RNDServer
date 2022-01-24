@@ -55,8 +55,32 @@ router.get('/api/gameStatus', (req, res) => {
 // get roomList
 router.get('/api/roomList', (req, res) => {
   res.header("Content-Type",'application/json');
-  res.send(db.get('roomList') || []);
+  const result = gameServices.getRoomList();
+  res.send(result)
 })
+
+// get roomInfo - display onlineYn
+router.get('/api/roomInfo/:roomId', (req, res) => {
+  res.header("Content-Type",'application/json');
+  const result = gameServices.getRoomInfo(req?.params?.roomId);
+  res.send(result)
+})
+
+// get playerList - current online
+router.get('/api/playerList', (req, res) => {
+  res.header("Content-Type",'application/json');
+  const result = gameServices.getPlayerList();
+  res.send(result)
+})
+
+// delete roomList - for TEST 
+router.get('/api/roomList/deleteAll', (req, res) => {
+  res.header("Content-Type",'application/json');
+  const result = gameServices.deleteRoomList()
+  res.send("all room list cleared")
+})
+
+
 
 // post login
 router.post('/api/requestJoinGame/:roomId/:playerId', (reqData, res) => {
