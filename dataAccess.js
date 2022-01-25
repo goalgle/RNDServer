@@ -116,12 +116,28 @@ module.exports.makeNewRoom = (roomId, player) => {
   }
 }
 
-Array.prototype.keyCheckPush = (keyName, mode = 'UPDATE') => {
+// return array
+const keyCheckPush = (array, object, keyName, mode = 'UPDATE') => {
   console.log(this)
   // mode : "ERROR" ==> insert or error
   // mode : "UPDATE" ==> insert or update
+  const existIndex = array.findIndex(item => item[keyName] === object[keyName])
+  if (existIndex > -1) {
+    // update
+    array.forEach((v, i) => {
+      if (i === existIndex) {
+        // replace
+        array[i] = object
+      }
+    })
+  } else {
+    // push
+    array.push(object)
+  }
+  return array
 }
 
+// return object
 const findOne = (array, keyName, keyValue) => {
   if(array instanceof Array) {
     const findItem = array?.filter(item => item[keyName] === keyValue)?.[0]
@@ -134,38 +150,14 @@ module.exports.addPlayerToRoom = (roomId, player) => {
   
   console.log(`DAO ::: addPlayerToRoom >> ROOM_ID : ${roomId} / PLAYER_ID : ${player?.playerId}`)
   const roomList = db.get("roomList") || []
-  
-  // const roomInfo = findOne(roomList, 'roomId', roomId)
-  // const newRoomInfo = produce(roomInfo, draft => {
-  //   draft?.playerList?.push(player)
-  // })
-  // roomList.push(newRoomInfo)
-
-  // db.set("roomList", newRoomInfo)
-  // db.sync()
-
-  const existRoom = roomList?.filter(item => item.roomId === roomId)?.[0]
-  const existRoomIdx = roomList?.findIndex(item => item.roomId === roomId)
-
-  if (existRoom) {
-    const playerListInRoom = existRoom?.playerList || []
-    const existPlayer = playerListInRoom?.filter(item => item.playerId === player.playerId)?.[0]
-    if (!existPlayer) {
-      playerListInRoom.push(player)
-      existRoom.playerList = [...playerListInRoom]
-      // replace roomList with new room information
-      roomList.splice(existRoomIdx, 1)
-      roomList.push(existRoom)
-      db.set("roomList", roomList)
-      db.sync()
-      return existRoom
-    } else {
-      // 해당 방이 있고 그 방에 유저가 있으면 do nothing
-    }
-    return {}
-  } else {
-    console.error(roomId + ' : 방이 없어서 addPlayerToRoom 불가')
-  }
+  const roomInfo = findOne(roomList, 'roomId', roomId)
+  const newRoomInfo = produce(roomInfo, draft => {
+    draft.playerList = [...roomInfo.playerList, player] // instead of push
+  })
+  //roomList.push(newRoomInfo)
+  const newRoomList = keyCheckPush(roomList, newRoomInfo, 'roomId')
+  db.set("roomList", newRoomList)
+  db.sync()
 }
 
 module.exports.deletePlayerInRoom = (roomId, playerId) => {
