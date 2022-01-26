@@ -11,6 +11,38 @@ db.set("playerList", [])
 // db.set("roomList", []) // 개발중일때 수시로 서버가 리스타트된다.
 db.sync();
 
+// return array
+const keyCheckPush = (array, object, keyName, mode = 'UPDATE') => {
+  let returnArr = []
+  const existIndex = array?.findIndex(item => item[keyName] === object[keyName])
+  if (existIndex > -1) {
+    if (mode === 'UPDATE') {
+      if (existIndex + 1 === array.length) {
+        returnArr = [...array.slice(0, existIndex) , object]
+      } else {
+        returnArr = [...array.slice(0, existIndex) , object, ...array.slice(existIndex+1, array.length)]
+      }
+    } else {
+      console.log(`exist key found >> ${keyName} : ${object[keyName]}`)
+    }
+  } else {
+    if (array && array instanceof Array && array.length > 0) {
+      returnArr = [...array, object] // push
+    } else {
+      returnArr = [object]
+    }
+  }
+  return returnArr
+}
+
+// return object
+const findOne = (array, keyName, keyValue) => {
+  if(array instanceof Array) {
+    const findItem = array?.filter(item => item[keyName] === keyValue)?.[0]
+    return findItem
+  } else return {}
+}
+
 // 하는 thread worker를 생성한다.
 
 // 10분단위로 roomList 를 검사하고 삭제
@@ -61,16 +93,10 @@ module.exports.getRoomInfo = (roomId) => db.get("roomList")?.filter(item => item
 module.exports.addPlayerList = (player) => {
   console.log('DAO ::: addPlayerList')
   const playerList = db.get("playerList") || []
-  const existPlayer = playerList?.filter(item => item.playerId === player.playerId)?.[0]
-  const existPlayerIdx = playerList?.findIndex(item => item.playerId === player.playerId)
 
-  if (existPlayer) {
-    playerList.splice(existPlayerIdx, 1)
-    playerList.push(player)
-  } else {
-    playerList.push(player)
-  }
-  db.set("playerList", playerList)
+  const newPlayerList = keyCheckPush(playerList, player, 'playerId')
+
+  db.set("playerList", newPlayerList)
   db.sync()
   return playerList
 } 
@@ -116,67 +142,39 @@ module.exports.makeNewRoom = (roomId, player) => {
   }
 }
 
-// return array
-const keyCheckPush = (array, object, keyName, mode = 'UPDATE') => {
-  console.log(this)
-  // mode : "ERROR" ==> insert or error
-  // mode : "UPDATE" ==> insert or update
-  const existIndex = array.findIndex(item => item[keyName] === object[keyName])
-  if (existIndex > -1) {
-    // update
-    array.forEach((v, i) => {
-      if (i === existIndex) {
-        // replace
-        array[i] = object
-      }
-    })
-  } else {
-    // push
-    array.push(object)
-  }
-  return array
-}
-
-// return object
-const findOne = (array, keyName, keyValue) => {
-  if(array instanceof Array) {
-    const findItem = array?.filter(item => item[keyName] === keyValue)?.[0]
-    return findItem
-  } else return {}
-}
-
 // dao.addPlayerListInRoom(roomId, playerObject)
 module.exports.addPlayerToRoom = (roomId, player) => {
-  
   console.log(`DAO ::: addPlayerToRoom >> ROOM_ID : ${roomId} / PLAYER_ID : ${player?.playerId}`)
   const roomList = db.get("roomList") || []
   const roomInfo = findOne(roomList, 'roomId', roomId)
   const newRoomInfo = produce(roomInfo, draft => {
-    draft.playerList = [...roomInfo.playerList, player] // instead of push
+    const newPlayerList = keyCheckPush(roomInfo?.playerList, player, 'playerId')
+    draft.playerList = newPlayerList // instead of push
   })
   //roomList.push(newRoomInfo)
   const newRoomList = keyCheckPush(roomList, newRoomInfo, 'roomId')
   db.set("roomList", newRoomList)
   db.sync()
+  return newRoomInfo
 }
 
-module.exports.deletePlayerInRoom = (roomId, playerId) => {
-  const roomInfo = this.getRoomInfo(roomId)
-  const playerList = roomInfo.playerList
-  // const playerInfo = playerList.filter(item => item.playerId === playerId)
-  const playerIdx = playerList.findIndex(item => item.playerId === playerId)
-  playerList.splice(playerIdx, 1)
+// module.exports.deletePlayerInRoom = (roomId, playerId) => {
+//   const roomInfo = this.getRoomInfo(roomId)
+//   const playerList = roomInfo.playerList
+//   // const playerInfo = playerList.filter(item => item.playerId === playerId)
+//   const playerIdx = playerList.findIndex(item => item.playerId === playerId)
+//   playerList.splice(playerIdx, 1)
 
-  const roomList = this.getRoomList()
-  const roomIdx = roomList.findIndex(item => item.roomId === roomId)
-  roomList.splice(roomIdx, 1)
+//   const roomList = this.getRoomList()
+//   const roomIdx = roomList.findIndex(item => item.roomId === roomId)
+//   roomList.splice(roomIdx, 1)
 
-  const newRoomInfo = {...roomInfo, playerList}
-  roomList.push(newRoomInfo)
+//   const newRoomInfo = {...roomInfo, playerList}
+//   roomList.push(newRoomInfo)
 
-  db.set("roomList", roomList)
-  db.sync()
-}
+//   db.set("roomList", roomList)
+//   db.sync()
+// }
 
 module.exports.updatePlayerInfoInRoom = (roomId, playerId, playerOptionInfo) => {
   console.log('DAO ::: updatePlayerInfoInRoom')
@@ -190,9 +188,36 @@ module.exports.updatePlayerInfoInRoom = (roomId, playerId, playerOptionInfo) => 
 
   console.log('updatePlayerInfoInRoom ::: new ==> ', JSON.stringify(newPlayerInfo))
 
-  this.deletePlayerInRoom(roomId, playerId)
+  // this.deletePlayerInRoom(roomId, playerId)
   this.addPlayerToRoom(roomId, newPlayerInfo)
-  
+}
+
+module.exports.updateRound = (roomId, playerId, diceResult) => {
+  const roomList = this.getRoomList()
+  const roomInfo = this.getRoomInfo(roomId)
+  const nextRoomInfo = produce(roomInfo, draft => {
+    draft.round = roomInfo.round + 1
+  })
+  const newRoomList = keyCheckPush(roomList, nextRoomInfo, 'roomId')
+  db.set('roomList', newRoomList)
+  db.sync()
+
+  return nextRoomInfo
+}
+
+module.exports.setTurn = (roomId) => {
+  const roomList = this.getRoomList()
+  const roomInfo = this.getRoomInfo(roomId)
+  const roomPlayerList = roomInfo?.playerList || []
+  const onLinePlayerList = roomPlayerList.filter(item => item.socketId !== 'AUTO')
+  const nextRoomInfo = produce(roomInfo, draft => {
+    if (roomInfo?.round === 0) 
+      draft.turn = roomInfo.host
+    else 
+      draft.turn = onLinePlayerList?.[0]?.playerId
+  })
+  const newRoomList = keyCheckPush(roomList, nextRoomInfo, 'roomId')
+  db.set('roomList', newRoomList)
   db.sync()
 }
 

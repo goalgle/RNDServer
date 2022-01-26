@@ -56,26 +56,14 @@ module.exports.requestJoinGame = (data) => {
     const requestPlayer = {'playerId': data.playerId, 'socketId': data.socketId, 'roomId': data.roomId}
     dao.addPlayerList(requestPlayer)
 
-    const alreadyExistInThisRoom = roomInfo?.playerList?.filter(item => item.playerId === data.playerId)?.[0]
-    if (alreadyExistInThisRoom) {
-      returnInfo = {'roomId': data.roomId, 'playerList': roomInfo.playerList}
-    }
-    // 게임이 있지만 플레이어 목록에 없으면
-    else {
-      // 플레이어 정원 4명이 다 차있으면
-      if (roomInfo?.playerList?.length > 3) {
-        returnInfo = {'roomId': '', 'playerList': []}
-      }
-      // 아직 정원이 차 있지 않으면 게임인원 추가 - 갱신
-      else {
-        // 유저정보 저장 - 소켓포함
-        const newPlayer = {'playerId': data.playerId, 'socketId': data.socketId, 'roomId': data.roomId}
-        dao.addPlayerList(newPlayer)
-
-        // 게임정보 저장
-        const updatedRoom = dao.addPlayerToRoom(roomInfo.roomId, newPlayer)
-        returnInfo = updatedRoom
-      }
+    // 본인이 게임에 등록되어 있으면 정보 업데이트
+    const bJoin = roomInfo?.playerList?.some(item => item.playerId === requestPlayer.playerId)
+    if (bJoin) {
+      returnInfo = dao.addPlayerToRoom(roomInfo.roomId, requestPlayer)
+    } else if (roomInfo?.playerList?.length > 3) {
+      returnInfo = {'roomId': '', 'playerList': []}
+    } else {
+      returnInfo = dao.addPlayerToRoom(roomInfo.roomId, requestPlayer)
     }
   }
   return returnInfo
@@ -98,14 +86,15 @@ module.exports.deleteOldRoom = () => {
 }
 
 module.exports.setGamePlayers = (roomId) => {
-  // rule 에 따라 플레이어 맞춤 및 turn 결젱
+  // rule 에 따라 플레이어 맞춤 
   const roomInfo = dao.getRoomInfo(roomId)
   const roomPlayerList = roomInfo?.playerList || []
 
-  if ((gameRule.players - roomPlayerList.length) > 1) { // roomPlayerList 는 적어도 한명 존재(자신)
+  if ((gameRule.players - roomPlayerList.length) > 0) { // roomPlayerList 는 적어도 한명 존재(자신)
     // 인원수 확장
     const dummyPlayerId = ['A', 'B', 'C', 'D']
     for(i = roomPlayerList.length; i < gameRule.players; i++) { // 1, 2, 3
+      console.log('player expand for auto >> ', dummyPlayerId[i])
       dao.addPlayerToRoom(roomId, { playerId: dummyPlayerId[i], socketId: 'AUTO', roomId: roomId})
     }
   }
@@ -114,9 +103,30 @@ module.exports.setGamePlayers = (roomId) => {
   const onlinePlayerInRoom = dao.getPlayerList()?.filter(item => item.roomId === roomId)
 
   expandedPlayerList.forEach((item, idx) => {
-    const bOnline = onlinePlayerInRoom.some((v, i) => {v.playerId === item.playerId})
-    if (!bOnline) dao.updatePlayerInfoInRoom(roomId, item.playerId, {socketId: 'AUTO'})
+    const bOnline = onlinePlayerInRoom.some(v => v.playerId === item.playerId)
+    if (!bOnline) {
+      dao.updatePlayerInfoInRoom(roomId, item.playerId, {socketId: 'AUTO'})
+    }
   })
+
+  dao.setTurn(roomId)
+}
+
+module.exports.setPhaseTurnTeam = (playerId, roomId) => {
+  // SET : PHASE, TEAM
+
+  // host && online will be first
+
+  // 
+}
+
+module.exports.rollDice = (roomId, playerId, diceResult) => {
+  // increase round
+  const updatedRoomInfo = dao.updateRound(roomId, playerId, diceResult)
+  return updatedRoomInfo
+  // turn : roomInfo.turn
+  // round : roomInfo.round
+
 }
 
 // TEST
