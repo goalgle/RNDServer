@@ -49,6 +49,7 @@ try {
       if (reqData && reqData.playerId && reqData.roomId) {
         const result = gameServices.requestJoinGame({...reqData, socketId: socket.id})
         io.emit(ioAction.requestJoinGame, result)
+        io.emit('chat', `${reqData.playerId}님이 참여했어요.`)
       } else {
         console.error('incompleted data ::: ', reqData)
         socket.emit('system', `required paramter fail ::: ${JSON.stringify(reqData)}`)
@@ -65,26 +66,23 @@ try {
       if (player) socket.broadcast.emit(ioAction.notice, player?.playerId + ' 유저님이 나갔어요.')
     });
 
-    const nextTurn = (roomInfo) => {
-      const round = roomInfo?.round
-      const playerList = roomInfo?.playerList
-      const whosTurnIdx = round % gameRule.player
-      return { turn: playerList?.[whosTurnIdx] }
-    }
-
     // 인원수 없는 경우 플레이어 늘리고 강제 시작
     socket.on('start', (reqData) => {
       console.log("REQ : IO : start >> ", reqData)
       if (reqData && reqData?.roomId && reqData?.playerId) {
 
-        gameServices.setGamePlayers(reqData.roomId)
+        const roomInfo = gameServices.getRoomInfo(reqData.roomId)
 
-        // gameServices.setPhaseTurnTeam(reqData.playerId, reqData.roomId)
-        
-        const updatedRoom = gameServices.getRoomInfo(reqData.roomId)
-
-        io.emit('notice', 'new game started!')
-        io.emit('gameUpdate', { ...updatedRoom, turn: nextTurn(updatedRoom)})
+        if (roomInfo.host === reqData.playerId) {
+          const updatedRoom = gameServices.setGamePlayers(reqData.roomId)
+  
+          io.emit('notice', 'new game started!')
+          io.emit('gameUpdate', updatedRoom)
+        } else {
+          io.emit('chat', reqData.playerId + '님은 방주인이 아니에요')
+        }
+      } else {
+        socket.emit('notice', '필수항목 누락 : ' + JSON.stringify(reqData))
       }
     })
 
@@ -102,7 +100,7 @@ try {
 
           const updatedRoomInfo = gameServices.rollDice(reqData?.roomId, reqData?.playerId, diceResult)
           io.emit("dice", diceResult)
-          io.emit('gameUpdate', { ...updatedRoomInfo, turn: nextTurn(updatedRoomInfo)})
+          io.emit('gameUpdate', { ...updatedRoomInfo})
         } else {
           io.emit('chat', reqData.playerId + '님 차례가 아니에요.')
         }
@@ -111,12 +109,21 @@ try {
 
     // 거래
     socket.on('trade', (reqData) => {
-
+      console.log("REQ : IO : trade >> ", reqData)
+      if (reqData && reqData?.roomId && reqData?.playerId && reqData?.diceResult && reqData?.trade) {
+        if (reqData.trade !== 'GET' && reqData.trade !== 'TOSS') {
+          
+        } else {
+          socket.emit('notice', '필수항목 누락 : ' + JSON.stringify(reqData))  
+        }
+      } else {
+        socket.emit('notice', '필수항목 누락 : ' + JSON.stringify(reqData))
+      }
     })
 
     // 채팅
     socket.on("chat", msg => {
-      console.log("REQ : IO : chat >> ", reqData)
+      console.log("REQ : IO : chat >> ", msg)
       const player = dao.getPlayerInfoBySocket(socket.id)
       if(player) io.emit("chat", player?.playerId + ' ::' + msg);
       else socket.emit("chat", '당신은 누구십니까?')

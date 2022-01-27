@@ -109,7 +109,18 @@ module.exports.setGamePlayers = (roomId) => {
     }
   })
 
+  // TURN 셋팅
   dao.setTurn(roomId)
+
+  // TEAM 셋팅
+  const playerList = dao.getRoomInfo(roomId)?.playerList || []
+  // sorry for hard-coding
+  const playersPerTeam = gameRule.players / gameRule.teams
+  const teamI = playerList.slice(0, playersPerTeam)
+  const teamII = playerList.slice(playersPerTeam, playerList.length)
+
+  const updatedRoomInfo = dao.setTeams(roomId, {'I': teamI, 'II': teamII})
+  return updatedRoomInfo
 }
 
 module.exports.setPhaseTurnTeam = (playerId, roomId) => {
@@ -123,7 +134,9 @@ module.exports.setPhaseTurnTeam = (playerId, roomId) => {
 module.exports.rollDice = (roomId, playerId, diceResult) => {
   // increase round
   const updatedRoomInfo = dao.updateRound(roomId, playerId, diceResult)
+  
   return updatedRoomInfo
+  
   // turn : roomInfo.turn
   // round : roomInfo.round
 

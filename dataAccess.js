@@ -192,11 +192,39 @@ module.exports.updatePlayerInfoInRoom = (roomId, playerId, playerOptionInfo) => 
   this.addPlayerToRoom(roomId, newPlayerInfo)
 }
 
+// sample game rule
+const gameRule = {
+  type: 'dice',
+  round: 20,
+  teams: 2,
+  players: 4,
+}
+
+const setRoomInfo = (roomInfo) => {
+  if (roomInfo && roomInfo?.roomId) {
+    const roomList = this.getRoomList()
+    const newRoomList = keyCheckPush(roomList, roomInfo, 'roomId')
+    db.set('roomList', newRoomList)
+    db.sync()
+  } else {
+    console.error('setRoomInfo fail')
+    return {}
+  }
+}
+
+const nextTurn = (roomInfo) => {
+  const round = roomInfo?.round + 1
+  const playerList = roomInfo?.playerList
+  const whosTurnIdx = round % gameRule.players
+  return { turn: playerList?.[whosTurnIdx]?.playerId }
+}
+
 module.exports.updateRound = (roomId, playerId, diceResult) => {
   const roomList = this.getRoomList()
   const roomInfo = this.getRoomInfo(roomId)
   const nextRoomInfo = produce(roomInfo, draft => {
     draft.round = roomInfo.round + 1
+    draft.turn = nextTurn(roomInfo)?.turn
   })
   const newRoomList = keyCheckPush(roomList, nextRoomInfo, 'roomId')
   db.set('roomList', newRoomList)
@@ -205,8 +233,7 @@ module.exports.updateRound = (roomId, playerId, diceResult) => {
   return nextRoomInfo
 }
 
-module.exports.setTurn = (roomId) => {
-  const roomList = this.getRoomList()
+module.exports.setTurn = (roomId) => { // default
   const roomInfo = this.getRoomInfo(roomId)
   const roomPlayerList = roomInfo?.playerList || []
   const onLinePlayerList = roomPlayerList.filter(item => item.socketId !== 'AUTO')
@@ -216,9 +243,17 @@ module.exports.setTurn = (roomId) => {
     else 
       draft.turn = onLinePlayerList?.[0]?.playerId
   })
-  const newRoomList = keyCheckPush(roomList, nextRoomInfo, 'roomId')
-  db.set('roomList', newRoomList)
-  db.sync()
+  setRoomInfo(nextRoomInfo)
+  return nextRoomInfo
+}
+
+module.exports.setTeams = (roomId, teamInfo) => {
+  const roomInfo = this.getRoomInfo(roomId)
+  const nextRoomInfo = produce(roomInfo, draft => {
+    draft.teams = teamInfo
+  })
+  setRoomInfo(nextRoomInfo)
+  return nextRoomInfo
 }
 
 // TEST
