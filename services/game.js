@@ -134,12 +134,15 @@ module.exports.setPhaseTurnTeam = (playerId, roomId) => {
 module.exports.rollDice = (roomId, playerId, diceResult) => {
   // increase round
   const updatedRoomInfo = dao.updateRound(roomId, playerId, diceResult)
-  
   return updatedRoomInfo
   
   // turn : roomInfo.turn
   // round : roomInfo.round
+}
 
+module.exports.setScore = (roomId, teamName, score) => {
+  const updatedRoomInfo = dao.updateScore(roomId, teamName, score)
+  return updatedRoomInfo
 }
 
 // TEST

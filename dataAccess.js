@@ -256,6 +256,18 @@ module.exports.setTeams = (roomId, teamInfo) => {
   return nextRoomInfo
 }
 
+module.exports.updateScore = (roomId, teamName, score) => {
+  const roomInfo = this.getRoomInfo(roomId)
+  const scoreRound = roomInfo.score.I.length + roomInfo.score.II.length
+  
+  const nextRoomInfo = produce(roomInfo, draft => {
+    draft.score[teamName] = [...draft.score[teamName], score]
+  })
+
+  setRoomInfo(nextRoomInfo)
+  return nextRoomInfo
+}
+
 // TEST
 module.exports.deleteRoomList = () => {
   db.set("roomList", [])

@@ -77,7 +77,8 @@ try {
           const updatedRoom = gameServices.setGamePlayers(reqData.roomId)
   
           io.emit('notice', 'new game started!')
-          io.emit('gameUpdate', updatedRoom)
+          io.emit('start', updatedRoom)
+          // socket.broadcast.emit('gameUpdate', updatedRoom)
         } else {
           io.emit('chat', reqData.playerId + '님은 방주인이 아니에요')
         }
@@ -111,14 +112,32 @@ try {
     socket.on('trade', (reqData) => {
       console.log("REQ : IO : trade >> ", reqData)
       if (reqData && reqData?.roomId && reqData?.playerId && reqData?.diceResult && reqData?.trade) {
-        if (reqData.trade !== 'GET' && reqData.trade !== 'TOSS') {
-          
+        const roomInfo = gameServices.getRoomInfo(reqData.roomId)
+        const isTeamI = roomInfo.teams.I.some(item => item.playerId === reqData.playerId)
+        let returnRoomInfo;
+        if (reqData.trade === 'HAVE') {          
+          if (isTeamI) {
+            // update score to team I
+            returnRoomInfo = gameServices.setScore(reqData.roomId, 'I', reqData.diceResult)
+          } else {
+            // update score to team II
+            returnRoomInfo = gameServices.setScore(reqData.roomId, 'II', reqData.diceResult)
+          }
+        } if (reqData.trade === 'PASS') {
+          if (isTeamI) {
+            // update score to team II
+            returnRoomInfo = gameServices.setScore(reqData.roomId, 'II', reqData.diceResult)
+          } else {
+            // update score to team I
+            returnRoomInfo = gameServices.setScore(reqData.roomId, 'I', reqData.diceResult)
+          }
         } else {
           socket.emit('notice', '필수항목 누락 : ' + JSON.stringify(reqData))  
         }
       } else {
         socket.emit('notice', '필수항목 누락 : ' + JSON.stringify(reqData))
       }
+      socket.emit('gameUpdate', gameServices.getRoomInfo(reqData.roomId))
     })
 
     // 채팅
