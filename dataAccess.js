@@ -3,7 +3,7 @@
  */
 const { produce } = require('immer')
 const JSONdb = require('simple-json-db');
-const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database_local.json');
+const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database.json');
 
 
 // when server restart :: online player and room init
@@ -225,6 +225,7 @@ module.exports.updateRound = (roomId, playerId, diceResult) => {
   const nextRoomInfo = produce(roomInfo, draft => {
     draft.round = roomInfo.round + 1
     draft.turn = nextTurn(roomInfo)?.turn
+    draft.diceResult = diceResult
   })
   const newRoomList = keyCheckPush(roomList, nextRoomInfo, 'roomId')
   db.set('roomList', newRoomList)
@@ -238,10 +239,12 @@ module.exports.setTurn = (roomId) => { // default
   const roomPlayerList = roomInfo?.playerList || []
   const onLinePlayerList = roomPlayerList.filter(item => item.socketId !== 'AUTO')
   const nextRoomInfo = produce(roomInfo, draft => {
-    if (roomInfo?.round === 0) 
-      draft.turn = roomInfo.host
-    else 
-      draft.turn = onLinePlayerList?.[0]?.playerId
+    draft.turn = roomInfo.host
+    draft.round = 0
+    // if (roomInfo?.round === 0) {
+    //   draft.turn = roomInfo.host
+    // } else 
+    //   draft.turn = onLinePlayerList?.[0]?.playerId
   })
   setRoomInfo(nextRoomInfo)
   return nextRoomInfo
@@ -259,9 +262,33 @@ module.exports.setTeams = (roomId, teamInfo) => {
 module.exports.updateScore = (roomId, teamName, score) => {
   const roomInfo = this.getRoomInfo(roomId)
   const scoreRound = roomInfo.score.I.length + roomInfo.score.II.length
+
+  if (scoreRound === 12) {
+    console.log('GAME OVER?')
+    return {} // game over
+  }
+
+  // hard coding sorry team : I , II
+
+  let targetTeamName = teamName;
+  if (roomInfo.score.I.length >= 6) targetTeamName = "II"
+  if (roomInfo.score.II.length >= 6) targetTeamName = "I"
   
   const nextRoomInfo = produce(roomInfo, draft => {
-    draft.score[teamName] = [...draft.score[teamName], score]
+    draft.score[targetTeamName] = [...draft.score[targetTeamName], score]
+  })
+
+  setRoomInfo(nextRoomInfo)
+  return nextRoomInfo
+}
+
+module.exports.clearScore = (roomId) => {
+  const roomInfo = this.getRoomInfo(roomId)
+  const scoreRound = roomInfo.score.I.length + roomInfo.score.II.length
+  
+  const nextRoomInfo = produce(roomInfo, draft => {
+    draft.score = {I: [], II: []}
+    draft.diceResult = ''
   })
 
   setRoomInfo(nextRoomInfo)

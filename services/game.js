@@ -85,7 +85,7 @@ module.exports.deleteOldRoom = () => {
   return dao.deleteOldRoom()
 }
 
-module.exports.setGamePlayers = (roomId) => {
+module.exports.setStart = (roomId) => {
   // rule 에 따라 플레이어 맞춤 
   const roomInfo = dao.getRoomInfo(roomId)
   const roomPlayerList = roomInfo?.playerList || []
@@ -118,6 +118,9 @@ module.exports.setGamePlayers = (roomId) => {
   const playersPerTeam = gameRule.players / gameRule.teams
   const teamI = playerList.slice(0, playersPerTeam)
   const teamII = playerList.slice(playersPerTeam, playerList.length)
+
+  // SCORE 초기화
+  dao.clearScore(roomId)
 
   const updatedRoomInfo = dao.setTeams(roomId, {'I': teamI, 'II': teamII})
   return updatedRoomInfo
