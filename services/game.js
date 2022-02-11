@@ -1,6 +1,9 @@
 // API SET for GAME
 const produce = require('immer')
 const dao = require('../dataAccess')
+
+const ruleConstant = require('../constants/rule')?.rule
+
 const ioAction = {
   requestJoinGame: 'requestJoinGame', // 게임 참가 요청 - emit / on
   notice: 'notice', // 서버 알림 공지
@@ -10,13 +13,7 @@ const ioAction = {
   leaveRoom: 'leaveRoom',
 }
 
-// sample game rule
-const gameRule = {
-  type: 'dice',
-  round: 20,
-  teams: 2,
-  players: 4,
-}
+
 
 /**
  * USAGE - DSL 적용
@@ -90,10 +87,10 @@ module.exports.setStart = (roomId) => {
   const roomInfo = dao.getRoomInfo(roomId)
   const roomPlayerList = roomInfo?.playerList || []
 
-  if ((gameRule.players - roomPlayerList.length) > 0) { // roomPlayerList 는 적어도 한명 존재(자신)
+  if ((ruleConstant.players - roomPlayerList.length) > 0) { // roomPlayerList 는 적어도 한명 존재(자신)
     // 인원수 확장
     const dummyPlayerId = ['A', 'B', 'C', 'D']
-    for(i = roomPlayerList.length; i < gameRule.players; i++) { // 1, 2, 3
+    for(i = roomPlayerList.length; i < ruleConstant.players; i++) { // 1, 2, 3
       console.log('player expand for auto >> ', dummyPlayerId[i])
       dao.addPlayerToRoom(roomId, { playerId: dummyPlayerId[i], socketId: 'AUTO', roomId: roomId})
     }
@@ -115,7 +112,7 @@ module.exports.setStart = (roomId) => {
   // TEAM 셋팅
   const playerList = dao.getRoomInfo(roomId)?.playerList || []
   // sorry for hard-coding
-  const playersPerTeam = gameRule.players / gameRule.teams
+  const playersPerTeam = ruleConstant.players / ruleConstant.teams
   const teamI = playerList.slice(0, playersPerTeam)
   const teamII = playerList.slice(playersPerTeam, playerList.length)
 
@@ -146,6 +143,16 @@ module.exports.rollDice = (roomId, playerId, diceResult) => {
 module.exports.setScore = (roomId, teamName, score) => {
   const updatedRoomInfo = dao.updateScore(roomId, teamName, score)
   return updatedRoomInfo
+}
+
+module.exports.deletePlayer = (socketId) => {
+  const deletedPlayer = dao.deletePlayer(socketId)
+  return deletedPlayer
+}
+
+module.exports.getPlayerInfoBySocket = (socketId) => {
+  const player = dao.getPlayerInfoBySocket(socketId)
+  return player
 }
 
 // TEST

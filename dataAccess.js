@@ -3,8 +3,12 @@
  */
 const { produce } = require('immer')
 const JSONdb = require('simple-json-db');
-const db = new JSONdb('/Users/naxing/Documents/development/RNDServer/database.json');
+const env = require('./constants/env').env
 
+const localDbPath = '/Users/naxing/Documents/development/RNDServer/database_local.json'
+const devDbPath = '/Users/naxing/Documents/development/RNDServer/database.json'
+
+const db = new JSONdb(env === '3001' ? devDbPath : localDbPath);
 
 // when server restart :: online player and room init
 db.set("playerList", [])
@@ -111,7 +115,7 @@ module.exports.deletePlayer = (socketId) => {
     const otherPlayers = playerList?.filter(item => item.socketId !== socketId)
     db.set("playerList", otherPlayers)
     db.sync()
-    return otherPlayers
+    return existPlayer
   }
   return {}
 }

@@ -1,1 +1,85 @@
-{}
+{
+    "playerList": [
+        {
+            "playerId": "민윤기",
+            "socketId": "05sR7W0A6lZ633E0AAAB",
+            "roomId": "345"
+        }
+    ],
+    "roomList": [
+        {
+            "roomId": "345",
+            "playerList": [
+                {
+                    "playerId": "민윤기",
+                    "socketId": "05sR7W0A6lZ633E0AAAB",
+                    "roomId": "345"
+                },
+                {
+                    "playerId": "B",
+                    "socketId": "AUTO",
+                    "roomId": "345"
+                },
+                {
+                    "playerId": "C",
+                    "socketId": "AUTO",
+                    "roomId": "345"
+                },
+                {
+                    "playerId": "D",
+                    "socketId": "AUTO",
+                    "roomId": "345"
+                }
+            ],
+            "timeStamp": 1644218767243,
+            "turn": "민윤기",
+            "score": {
+                "I": [
+                    5,
+                    4,
+                    3,
+                    2,
+                    3,
+                    2
+                ],
+                "II": [
+                    6,
+                    1,
+                    3,
+                    1,
+                    3,
+                    4
+                ]
+            },
+            "host": "민윤기",
+            "round": 12,
+            "teams": {
+                "I": [
+                    {
+                        "playerId": "민윤기",
+                        "socketId": "05sR7W0A6lZ633E0AAAB",
+                        "roomId": "345"
+                    },
+                    {
+                        "playerId": "B",
+                        "socketId": "AUTO",
+                        "roomId": "345"
+                    }
+                ],
+                "II": [
+                    {
+                        "playerId": "C",
+                        "socketId": "AUTO",
+                        "roomId": "345"
+                    },
+                    {
+                        "playerId": "D",
+                        "socketId": "AUTO",
+                        "roomId": "345"
+                    }
+                ]
+            },
+            "diceResult": 4
+        }
+    ]
+}
