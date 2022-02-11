@@ -8,7 +8,7 @@ const env = require('./constants/env').env
 const localDbPath = '/Users/naxing/Documents/development/RNDServer/database_local.json'
 const devDbPath = '/Users/naxing/Documents/development/RNDServer/database.json'
 
-const db = new JSONdb(env === '3001' ? devDbPath : localDbPath);
+const db = new JSONdb(env.port === '3001' ? devDbPath : localDbPath);
 
 // when server restart :: online player and room init
 db.set("playerList", [])

@@ -104,6 +104,11 @@ module.exports.setStart = (roomId) => {
     if (!bOnline) {
       dao.updatePlayerInfoInRoom(roomId, item.playerId, {socketId: 'AUTO'})
     }
+    if (idx < 2) { // 0, 1 vs 2, 3
+      dao.updatePlayerInfoInRoom(roomId, item.playerId, {team: 'I'})
+    } else {
+      dao.updatePlayerInfoInRoom(roomId, item.playerId, {team: 'II'})
+    }
   })
 
   // TURN 셋팅

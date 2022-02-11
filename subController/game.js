@@ -153,7 +153,7 @@ module.exports.trade = async (io, socket, reqData) => {
 
 module.exports.chat = (io, socket, reqData) => {
   console.log(`IO REQ : chat >> , ${socket.id} :: ${JSON.stringify(reqData)}`);
-  const player = dao.getPlayerInfoBySocket(socket.id)
-  if (player) io.emit("chat", player?.playerId + ' ::' + msg);  
+  const player = gameServices.getPlayerInfoBySocket(socket.id)
+  if (player) io.emit("chat", player?.playerId + ' ::' + reqData);  
   else socket.emit("chat", '당신은 누구십니까?')
 }
