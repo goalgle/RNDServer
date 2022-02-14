@@ -1,5 +1,5 @@
 // API SET for GAME
-const dao = require('../dataAccess')
+const dao = require('../dao/dataAccess')
 
 const ruleConstant = require('../constants/rule')?.rule
 

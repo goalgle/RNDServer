@@ -1,5 +1,5 @@
 
 module.exports.env = {
   mode: 'DEV',
-  port: '3001'
+  port: '3000'
 }

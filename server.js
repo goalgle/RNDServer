@@ -1,7 +1,7 @@
 const app = require("express")();
 const cors = require("cors");
 const server = require("http").createServer(app);
-const routes = require("./routes")
+const routes = require("./controller/routes")
 const io = require("socket.io")(server, {
   // 동일IP의 client에서 응답처리를 항기 위해 필요.
   cors : {
@@ -10,18 +10,20 @@ const io = require("socket.io")(server, {
   }
 });
 
+const { Worker } = require("worker_threads");
+
 // CONSTANT
 const ioConstant = require('./constants/io').io
 const envConstant = require('./constants/env').env
 
 // SUB-CONTROLLER LAYER
-const ioController = require('./subController/game')
+const ioController = require('./controller/ioGame')
 
 // SERVICE LAYER
 const gameServices = require('./services/game')
 
 // DATA ACCESS LAYER
-const dao = require('./dataAccess')
+const dao = require('./dao/dataAccess')
 
 const loadSocketListener = (socket, ioActionId) => {
   console.log(`LOADING SOCKET LISTENR : ${ioActionId} >> , ${socket.id}`);
@@ -54,7 +56,7 @@ try {
 
     // EXTEND socket object
     socket.listen = (ioActionId) => loadSocketListener(socket, ioActionId)
-    
+
     // DELETE OLD ROOM - 30MIN BEFORE
     gameServices.deleteOldRoom()
 

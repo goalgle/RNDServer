@@ -3,10 +3,10 @@
  */
 const { produce } = require('immer')
 const JSONdb = require('simple-json-db');
-const env = require('./constants/env').env
+const env = require('../constants/env').env
 
-const localDbPath = '/Users/naxing/Documents/development/RNDServer/database_local.json'
-const devDbPath = '/Users/naxing/Documents/development/RNDServer/database.json'
+const localDbPath = './storage/database_local.json'
+const devDbPath = './storage/database.json'
 
 const db = new JSONdb(env.port === '3001' ? devDbPath : localDbPath);
 
@@ -239,19 +239,18 @@ module.exports.updateRound = (roomId, playerId, diceResult) => {
 }
 
 module.exports.setTurn = (roomId) => { // default
-  const roomInfo = this.getRoomInfo(roomId)
+  let roomInfo = this.getRoomInfo(roomId)
   const roomPlayerList = roomInfo?.playerList || []
   const onLinePlayerList = roomPlayerList.filter(item => item.socketId !== 'AUTO')
+
+  // roomInfo = {...roomInfo, round: 0, turn: roomInfo.host}
+
   const nextRoomInfo = produce(roomInfo, draft => {
     draft.turn = roomInfo.host
     draft.round = 0
-    // if (roomInfo?.round === 0) {
-    //   draft.turn = roomInfo.host
-    // } else 
-    //   draft.turn = onLinePlayerList?.[0]?.playerId
   })
-  setRoomInfo(nextRoomInfo)
-  return nextRoomInfo
+  setRoomInfo(roomInfo)
+  return roomInfo
 }
 
 module.exports.setTeams = (roomId, teamInfo) => {

@@ -1,67 +1,61 @@
 {
     "playerList": [
         {
-            "playerId": "홍길동",
-            "socketId": "WB-YWlZ60Rbq5sTFAAAR",
-            "roomId": "예제방이름"
+            "playerId": "11",
+            "socketId": "lFYwLPJZpaoyPXvZAAAD",
+            "roomId": "dd"
         }
     ],
     "roomList": [
         {
-            "roomId": "예제방이름",
+            "roomId": "dd",
             "playerList": [
                 {
-                    "playerId": "홍길동",
-                    "socketId": "WB-YWlZ60Rbq5sTFAAAR",
-                    "roomId": "예제방이름",
+                    "playerId": "11",
+                    "socketId": "lFYwLPJZpaoyPXvZAAAD",
+                    "roomId": "dd",
                     "team": "I"
                 },
                 {
                     "playerId": "B",
                     "socketId": "AUTO",
-                    "roomId": "예제방이름",
+                    "roomId": "dd",
                     "team": "I"
                 },
                 {
                     "playerId": "C",
                     "socketId": "AUTO",
-                    "roomId": "예제방이름",
+                    "roomId": "dd",
                     "team": "II"
                 },
                 {
                     "playerId": "D",
                     "socketId": "AUTO",
-                    "roomId": "예제방이름",
+                    "roomId": "dd",
                     "team": "II"
                 }
             ],
-            "timeStamp": 1644798439746,
-            "turn": "홍길동",
+            "timeStamp": 1644829589483,
+            "turn": "",
             "score": {
-                "I": [
-                    2
-                ],
-                "II": [
-                    2,
-                    3,
-                    4
-                ]
+                "I": [],
+                "II": []
             },
-            "host": "홍길동",
-            "round": 4,
-            "diceResult": 2,
+            "host": "11",
+            "round": 0,
+            "diceResult": "",
             "teams": {
                 "I": [
                     {
-                        "playerId": "홍길동",
-                        "socketId": "WB-YWlZ60Rbq5sTFAAAR",
-                        "roomId": "예제방이름",
+                        "playerId": "11",
+                        "socketId": "lFYwLPJZpaoyPXvZAAAD",
+                        "roomId": "dd",
                         "team": "I"
                     },
                     {
                         "playerId": "B",
                         "socketId": "AUTO",
-                        "roomId": "예제방이름",
+                        "roomId": "dd",
                         "team": "I"
                     }
                 ],
@@ -69,13 +63,13 @@
                     {
                         "playerId": "C",
                         "socketId": "AUTO",
-                        "roomId": "예제방이름",
+                        "roomId": "dd",
                         "team": "II"
                     },
                     {
                         "playerId": "D",
                         "socketId": "AUTO",
-                        "roomId": "예제방이름",
+                        "roomId": "dd",
                         "team": "II"
                     }
                 ]

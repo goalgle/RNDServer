@@ -4,7 +4,7 @@ var express = require('express');
 var router = express.Router();
 const fs = require("fs");
 
-const gameServices = require('./services/game')
+const gameServices = require('../services/game')
 
 // var faunadb = require('faunadb'),
 //   q = faunadb.query

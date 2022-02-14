@@ -1,0 +1,73 @@
+{
+    "playerList": [],
+    "roomList": [
+        {
+            "roomId": "test",
+            "playerList": [
+                {
+                    "playerId": "1",
+                    "socketId": "VFz2SkTjwFhZstL2AABD",
+                    "roomId": "test",
+                    "team": "I"
+                },
+                {
+                    "playerId": "2",
+                    "socketId": "NpfOXfSg2XVgYuHzAABF",
+                    "roomId": "test",
+                    "team": "I"
+                },
+                {
+                    "playerId": "C",
+                    "socketId": "AUTO",
+                    "roomId": "test",
+                    "team": "II"
+                },
+                {
+                    "playerId": "D",
+                    "socketId": "AUTO",
+                    "roomId": "test",
+                    "team": "II"
+                }
+            ],
+            "timeStamp": 1644816428693,
+            "turn": "2",
+            "score": {
+                "I": [],
+                "II": []
+            },
+            "host": "1",
+            "round": 1,
+            "diceResult": 4,
+            "teams": {
+                "I": [
+                    {
+                        "playerId": "1",
+                        "socketId": "VFz2SkTjwFhZstL2AABD",
+                        "roomId": "test",
+                        "team": "I"
+                    },
+                    {
+                        "playerId": "2",
+                        "socketId": "NpfOXfSg2XVgYuHzAABF",
+                        "roomId": "test",
+                        "team": "I"
+                    }
+                ],
+                "II": [
+                    {
+                        "playerId": "C",
+                        "socketId": "AUTO",
+                        "roomId": "test",
+                        "team": "II"
+                    },
+                    {
+                        "playerId": "D",
+                        "socketId": "AUTO",
+                        "roomId": "test",
+                        "team": "II"
+                    }
+                ]
+            }
+        }
+    ]
+}
