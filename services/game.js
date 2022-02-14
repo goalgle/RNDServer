@@ -1,35 +1,11 @@
 // API SET for GAME
-const produce = require('immer')
 const dao = require('../dataAccess')
 
 const ruleConstant = require('../constants/rule')?.rule
 
-const ioAction = {
-  requestJoinGame: 'requestJoinGame', // 게임 참가 요청 - emit / on
-  notice: 'notice', // 서버 알림 공지
-  disconnect: 'disconnect', // 접속 해제
-  // API 대체 예정
-  
-  leaveRoom: 'leaveRoom',
-}
+const gameService = {}
 
-
-
-/**
- * USAGE - DSL 적용
- * const gameService = require('./services/game')
- * const game = gameService.makeGame(gameInfo)
- * game.join(playerInfo)
- * game.leave(playerInfo)
- * game.score()
- * game.over()
- */
-
-// new Game instance
-// module.exports.makeGame(gameInfo) = () => console.log(gameInfo)
-
-
-module.exports.requestJoinGame = (data) => {
+gameService.requestJoinGame = (data) => {
 
   let returnInfo = null;
 
@@ -66,23 +42,23 @@ module.exports.requestJoinGame = (data) => {
   return returnInfo
 }
 
-module.exports.getRoomList = () => {
+gameService.getRoomList = () => {
   return dao.getRoomList()
 }
 
-module.exports.getRoomInfo = (roomId) => {
+gameService.getRoomInfo = (roomId) => {
   return dao.getRoomInfo(roomId)
 }
 
-module.exports.getPlayerList = () => {
+gameService.getPlayerList = () => {
   return dao.getPlayerList()
 }
 
-module.exports.deleteOldRoom = () => {
+gameService.deleteOldRoom = () => {
   return dao.deleteOldRoom()
 }
 
-module.exports.setStart = (roomId) => {
+gameService.setStart = (roomId) => {
   // rule 에 따라 플레이어 맞춤 
   const roomInfo = dao.getRoomInfo(roomId)
   const roomPlayerList = roomInfo?.playerList || []
@@ -128,39 +104,30 @@ module.exports.setStart = (roomId) => {
   return updatedRoomInfo
 }
 
-module.exports.setPhaseTurnTeam = (playerId, roomId) => {
-  // SET : PHASE, TEAM
-
-  // host && online will be first
-
-  // 
-}
-
-module.exports.rollDice = (roomId, playerId, diceResult) => {
+gameService.rollDice = (roomId, playerId, diceResult) => {
   // increase round
   const updatedRoomInfo = dao.updateRound(roomId, playerId, diceResult)
   return updatedRoomInfo
-  
-  // turn : roomInfo.turn
-  // round : roomInfo.round
 }
 
-module.exports.setScore = (roomId, teamName, score) => {
+gameService.setScore = (roomId, teamName, score) => {
   const updatedRoomInfo = dao.updateScore(roomId, teamName, score)
   return updatedRoomInfo
 }
 
-module.exports.deletePlayer = (socketId) => {
+gameService.deletePlayer = (socketId) => {
   const deletedPlayer = dao.deletePlayer(socketId)
   return deletedPlayer
 }
 
-module.exports.getPlayerInfoBySocket = (socketId) => {
+gameService.getPlayerInfoBySocket = (socketId) => {
   const player = dao.getPlayerInfoBySocket(socketId)
   return player
 }
 
 // TEST
-module.exports.deleteRoomList = () => {
+gameService.deleteRoomList = () => {
   dao.deleteRoomList()
 }
+
+module.exports = gameService

@@ -78,11 +78,12 @@ try {
   });
 } catch (e) {
   console.error(e)
-  io.emit('system', JSON.stringify(e))
+  // io.emit('system', JSON.stringify(e))
 }
 
 // http
 // app.use('/', routes)
+app.locals.io = io
 app.use(cors())
 app.use('/',routes,)
 

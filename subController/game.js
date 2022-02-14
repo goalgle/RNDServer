@@ -14,25 +14,28 @@ const sleep = (ms) => {
   });
 }
 
-module.exports.requestJoinGame = (io, socket, reqData) => {
+const ioController = {}
+
+ioController.requestJoinGame = (io, socket, reqData) => {
   console.log(`IO REQ : requestJoinGame >> , ${socket.id} :: ${JSON.stringify(reqData)}`);
   const { flag, errMsg } = checkRequired(reqData, ['playerId', 'roomId'])
   if (!flag) socket.emit('system', errMsg)
   else {
+    socket.join(reqData.roomId)
     const result = gameServices.requestJoinGame({...reqData, socketId: socket.id})
     socket.emit(ioConstant.requestJoinGame, result)
-    socket.broadcast.emit('gameUpdate', result)
+    socket.broadcast.to(reqData.roomId).emit('gameUpdate', result)
     io.in(reqData.roomId).emit('chat', `${reqData.playerId}님이 참여했어요.`)
   }
 }
 
-module.exports.disconnect = (io, socket, reqData) => {
+ioController.disconnect = (io, socket, reqData) => {
   console.log(`IO REQ : disconnect >> , ${socket.id} :: ${JSON.stringify(reqData)}`);
   const player = gameServices.deletePlayer(socket.id)
-  if (player) socket.broadcast.emit(ioConstant.notice, player?.playerId + ' 유저님이 나갔어요.')
+  if (player) socket.broadcast.to(reqData.roomId).emit(ioConstant.notice, player?.playerId + ' 유저님이 나갔어요.')
 }
 
-module.exports.start = (io, socket, reqData) => {
+ioController.start = (io, socket, reqData) => {
   console.log(`IO REQ : start >> , ${socket.id} :: ${JSON.stringify(reqData)}`);
   const { flag, errMsg } = checkRequired(reqData, ['playerId', 'roomId'])
   if (!flag) socket.emit('system', errMsg)
@@ -47,13 +50,13 @@ module.exports.start = (io, socket, reqData) => {
     if (roomInfo.host === reqData.playerId) {
       const updatedRoom = gameServices.setStart(reqData.roomId)
 
-      io.emit('notice', 'new game started!')
+      io.in(reqData.roomId).emit('notice', 'new game started!')
 
       socket.emit('start', updatedRoom)
 
-      socket.broadcast.emit('gameUpdate', updatedRoom)
+      socket.broadcast.to(reqData.roomId).emit('gameUpdate', updatedRoom)
     } else {
-      io.emit('chat', reqData.playerId + '님은 방주인이 아니에요')
+      io.in(reqData.roomId).emit('chat', reqData.playerId + '님은 방주인이 아니에요')
     }
   }
 }
@@ -68,14 +71,14 @@ const socketDice = (io, socket, reqData) => {
 
     const updatedRoomInfo = gameServices.rollDice(reqData?.roomId, reqData?.playerId, diceResult)
     socket.emit("dice", diceResult)
-    socket.broadcast.emit('gameUpdate', { ...updatedRoomInfo})
+    socket.broadcast.to(reqData.roomId).emit('gameUpdate', { ...updatedRoomInfo})
   } else {
-    io.emit('chat', reqData.playerId + '님 차례가 아니에요.')
+    io.in(reqData.roomId).emit('chat', reqData.playerId + '님 차례가 아니에요.')
   }
   return diceResult
 }
 
-module.exports.dice = (io, socket, reqData) => {
+ioController.dice = (io, socket, reqData) => {
   console.log(`IO REQ : dice >> , ${socket.id} :: ${JSON.stringify(reqData)}`);
   const { flag, errMsg } = checkRequired(reqData, ['playerId', 'roomId'])
   if (!flag) socket.emit('system', errMsg)
@@ -110,7 +113,7 @@ const socketTrade = (io, socket, reqData) => {
   return returnRoomInfo
 }
 
-module.exports.trade = async (io, socket, reqData) => {
+ioController.trade = async (io, socket, reqData) => {
   console.log(`IO REQ : trade >> , ${socket.id} :: ${JSON.stringify(reqData)}`);
   const { flag, errMsg } = checkRequired(reqData, ['playerId', 'roomId', 'diceResult', 'trade'])
   if (!flag) socket.emit('system', errMsg)
@@ -124,7 +127,7 @@ module.exports.trade = async (io, socket, reqData) => {
     for(i = nextPlayerIdx; returnRoomInfo.playerList[i % playerCount].socketId === 'AUTO'; i++) {
       console.log('LOOP CAUTION ::: turn >> ', returnRoomInfo.playerList[nextPlayerIdx].playerId)
       // socket.emit('chat', 'auto ' + returnRoomInfo.playerList[nextPlayerIdx].playerId + ' 진행중')
-      io.emit('chat', 'auto ' + returnRoomInfo.playerList[nextPlayerIdx].playerId + ' 진행중')
+      io.in(reqData.roomId).emit('chat', 'auto ' + returnRoomInfo.playerList[nextPlayerIdx].playerId + ' 진행중')
       // 주사위
       await sleep(1000);
       const diceResult = await socketDice(io, socket, {
@@ -140,7 +143,7 @@ module.exports.trade = async (io, socket, reqData) => {
         diceResult: diceResult,
         trade: diceResult > 3 ? 'HAVE' : 'PASS'
       })
-      io.emit('gameUpdate', nextRoomInfo)
+      io.in(reqData.roomId).emit('gameUpdate', nextRoomInfo)
       await sleep(1000);
       console.log('LOOP CAUTION ::: nextRoom >> ', nextRoomInfo.turn)
       nextPlayerIdx = nextRoomInfo.playerList.findIndex(item => item.playerId === nextRoomInfo.turn)
@@ -148,13 +151,15 @@ module.exports.trade = async (io, socket, reqData) => {
     }
 
     socket.emit('trade', returnRoomInfo)
-    io.emit('gameUpdate', returnRoomInfo)
+    io.in(reqData.roomId).emit('gameUpdate', returnRoomInfo)
   }
 }
 
-module.exports.chat = (io, socket, reqData) => {
+ioController.chat = (io, socket, reqData) => {
   console.log(`IO REQ : chat >> , ${socket.id} :: ${JSON.stringify(reqData)}`);
   const player = gameServices.getPlayerInfoBySocket(socket.id)
-  if (player) io.emit("chat", player?.playerId + ' ::' + reqData);  
+  if (player) io.in(player.roomId).emit("chat", player?.playerId + ' ::' + reqData);  
   else socket.emit("chat", '당신은 누구십니까?')
 }
+
+module.exports = ioController

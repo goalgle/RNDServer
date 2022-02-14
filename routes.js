@@ -81,16 +81,20 @@ router.get('/api/roomList/deleteAll', (req, res) => {
 })
 
 
-
 // post login
 router.post('/api/requestJoinGame/:roomId/:playerId', (reqData, res) => {
   const roomId = reqData?.params?.roomId
   const playerId = reqData?.params?.playerId
 
   if (reqData && roomId && playerId) {
+    const io = reqData.app.locals.io
     const result = gameServices.requestJoinGame({roomId, playerId, socketId: reqData?.ip})
     res.header("Content-Type",'application/json');
     res.send(result)
+    if (io) {
+      io.in(roomId).emit('gameUpdate', result)
+      io.socketsJoin(roomId)
+    }
   } else {
     console.error('incompleted data ::: ', reqData)
     res.header("Content-Type",'application/json');
