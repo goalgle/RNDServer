@@ -1,3 +1,33 @@
+> Dice Game Server
+React Native Toy Project 에 대응하는 서버
+
+> Environment
+```
+node server : express , socketio
+db : simple json db
+```
+https://expressjs.com/ko/
+https://poiemaweb.com/nodejs-socketio
+
+
+> Structure
+```
+constant : 상수정의
+utils : 유틸
+
+server - routes : for Http REQ/RES API
+       - subContorller : for socket IO
+
+service : 로직
+
+dataAccess : db CRUD
+```
+
+> IO 명세
+
+
+> JSON 명세
+```
 {
     "playerList": [
         {
@@ -83,3 +113,5 @@
         }
     ]
 }
+```
+
