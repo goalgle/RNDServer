@@ -20,8 +20,9 @@ module.exports.requestJoinGame = (io, socket, reqData) => {
   if (!flag) socket.emit('system', errMsg)
   else {
     const result = gameServices.requestJoinGame({...reqData, socketId: socket.id})
-    io.emit(ioConstant.requestJoinGame, result)
-    io.emit('chat', `${reqData.playerId}님이 참여했어요.`)
+    socket.emit(ioConstant.requestJoinGame, result)
+    socket.broadcast.emit('gameUpdate', result)
+    io.in(reqData.roomId).emit('chat', `${reqData.playerId}님이 참여했어요.`)
   }
 }
 
